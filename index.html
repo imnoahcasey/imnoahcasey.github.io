@@ -757,13 +757,46 @@
       nav { padding: 16px 24px; }
       .nav-links { display: none; }
       #hero, #skills, #certifications, #experience, #projects, #showcase, #contact { padding: 100px 24px 60px; }
-      .hero-kpis { grid-template-columns: 1fr 1fr; }
+      .hero-kpis {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        max-width: 100%;
+      }
+      .hero-kpi {
+        padding: 16px 14px;
+      }
+      .hero-kpi-num {
+        font-size: 38px;
+      }
+      .hero-kpi-label {
+        margin-top: 6px;
+        font-size: 8px;
+        letter-spacing: 1.5px;
+        line-height: 1.45;
+      }
       .contact-grid { grid-template-columns: 1fr; }
       .showcase-intro { grid-template-columns: 1fr; gap: 40px; }
       .showcase-reel { grid-template-columns: 1fr; }
       .reel-item.featured { grid-row: span 1; }
       footer { padding: 40px 24px; flex-direction: column; align-items: flex-start; }
       .hero-deco { display: none; }
+    }
+
+    @media (max-width: 520px) {
+      .hero-kpis {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .hero-kpi {
+        padding: 14px 14px;
+      }
+      .hero-kpi-num {
+        font-size: 34px;
+      }
+      .hero-kpi-label {
+        font-size: 8px;
+        letter-spacing: 1.25px;
+      }
     }
 
 
@@ -783,20 +816,22 @@
     .hero-kpis {
       margin-top: 34px;
       display: grid;
-      grid-template-columns: repeat(4, minmax(140px, 1fr));
-      gap: 2px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
       max-width: 980px;
+      width: 100%;
       opacity: 0;
       animation: fadeUp 0.9s 0.8s forwards;
     }
     .hero-kpi {
       background: var(--bg3);
       border: 1px solid var(--steel);
-      padding: 22px 24px;
+      padding: 22px 20px;
+      min-width: 0;
     }
     .hero-kpi-num {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 54px;
+      font-size: clamp(40px, 5vw, 54px);
       line-height: 1;
       color: var(--purple-lt);
     }
@@ -804,10 +839,11 @@
       margin-top: 8px;
       font-family: 'Share Tech Mono', monospace;
       font-size: 9px;
-      letter-spacing: 3px;
+      letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--muted);
-      line-height: 1.7;
+      line-height: 1.6;
+      word-break: break-word;
     }
 
     /* ── CERTIFICATIONS ── */
@@ -1382,25 +1418,39 @@
         <div class="exp-dot"></div>
         <div class="exp-date">MAY 2024 — PRESENT</div>
         <div class="exp-company">NEWELL BRANDS</div>
-        <div class="exp-role">// Associate Manager, MES Technical Deployment</div>
-        <p class="exp-desc">Senior SCADA / MES architect and technical lead designing enterprise MES, SCADA, and MOM platforms. Owns system architecture, modernization strategy, security design, integrations, and scalable application frameworks across complex operational environments.</p>
-        <div class="exp-tech"><span class="tag">Ignition</span><span class="tag">MES</span><span class="tag">UNS</span><span class="tag">ISA-95</span><span class="tag">APIs</span><span class="tag">Security</span></div>
+        <div class="exp-role">// Associate Manager, MES Technical Deployment · Senior SCADA / MES Architect &amp; Technical Lead</div>
+        <p class="exp-desc">
+          Serving as technical authority and lead architect for enterprise MES, SCADA, and MOM platforms aligned to ISA-95 and Unified Namespace principles. Own end-to-end architecture, design, and development across full system lifecycles including requirements analysis, application structure, data modeling, integrations, deployment strategy, and long-term maintainability. Lead internal and external technical resources while establishing architecture standards, reviewing implementations, and driving delivery quality across enterprise initiatives. Designed custom security and access-control frameworks supporting Active Directory, badge systems, Ignition authentication, role-based navigation, and application-level permissions. Built ERP, CMMS, and EAM integrations using REST APIs, databases, and event-driven messaging. Led legacy modernization efforts converting Wonderware platforms into scalable Ignition architectures while maintaining operational continuity. Architected functional domains including OEE, downtime, scheduling, traceability, genealogy, document management, enterprise reporting, and reusable enterprise application frameworks.
+        </p>
+        <div class="exp-tech">
+          <span class="tag">Ignition</span><span class="tag">MES</span><span class="tag">MOM</span><span class="tag">ISA-95</span><span class="tag">UNS</span><span class="tag">REST APIs</span><span class="tag">Security</span><span class="tag">EAM</span><span class="tag">OEE</span>
+        </div>
       </div>
+
       <div class="exp-item">
         <div class="exp-dot"></div>
         <div class="exp-date">DEC 2023 — APR 2024</div>
         <div class="exp-company">SANDALWOOD ENGINEERING &amp; ERGONOMICS</div>
-        <div class="exp-role">// Systems Integrator (SCADA / MES Architect &amp; Lead Developer)</div>
-        <p class="exp-desc">Architected and delivered SCADA, MES, and HMI solutions using Ignition modules including Perspective, Vision, WebDev, MQTT, and Reporting. Designed APIs, optimized SQL architectures, and modernized legacy manufacturing applications into maintainable Ignition solutions.</p>
-        <div class="exp-tech"><span class="tag">Perspective</span><span class="tag">Vision</span><span class="tag">WebDev</span><span class="tag">MQTT</span><span class="tag">SQL</span><span class="tag">PowerApps</span></div>
+        <div class="exp-role">// Systems Integrator · SCADA / MES Architect &amp; Lead Developer</div>
+        <p class="exp-desc">
+          Architected and delivered SCADA, MES, and HMI solutions using Ignition modules including Perspective, Vision, WebDev, MQTT, and Reporting to support real-time visualization, analytics, and system integration. Designed and implemented RESTful APIs within Ignition to enable seamless data exchange with external platforms, including Tulip, improving interoperability across enterprise systems. Engineered and optimized SQL database architectures for multiple projects, ensuring data integrity, performance, and scalability across operational and reporting workloads. Led the modernization of a legacy C++ automotive manufacturing application by re-architecting the solution within Ignition for improved usability, extensibility, and long-term maintainability. Also developed and maintained a company-wide help desk application using Power Apps and SharePoint, streamlining issue tracking and resolution workflows. Designed and delivered a JSON Tree Viewer Widget that was later featured in Tulip’s widget library.
+        </p>
+        <div class="exp-tech">
+          <span class="tag">Perspective</span><span class="tag">Vision</span><span class="tag">WebDev</span><span class="tag">MQTT</span><span class="tag">SQL</span><span class="tag">Power Apps</span><span class="tag">SharePoint</span><span class="tag">Tulip</span>
+        </div>
       </div>
+
       <div class="exp-item">
         <div class="exp-dot"></div>
         <div class="exp-date">FEB 2019 — DEC 2023</div>
         <div class="exp-company">GLOBAL PROCESS AUTOMATION</div>
-        <div class="exp-role">// MI Solutions Specialist II (SCADA / MES Systems Integrator)</div>
-        <p class="exp-desc">Delivered SCADA, HMI, and MES solutions across 20+ customer environments, including multiple Fortune 500 organizations. Built dashboards, production workflows, data models, migrations from Wonderware / FactoryTalk / ABB 800xA, and ongoing support for distributed Ignition environments.</p>
-        <div class="exp-tech"><span class="tag">Wonderware</span><span class="tag">FactoryTalk</span><span class="tag">ABB 800xA</span><span class="tag">Power BI</span><span class="tag">SQL</span><span class="tag">Ignition Edge</span></div>
+        <div class="exp-role">// MI Solutions Specialist II · SCADA / MES Systems Integrator</div>
+        <p class="exp-desc">
+          Delivered SCADA, HMI, and MES solutions as part of a systems integration team supporting 20+ customer environments, including multiple Fortune 500 organizations, across diverse operational domains. Designed and implemented Ignition-based SCADA and MES applications, building HMIs, dashboards, and operational workflows tailored to customer-specific processes. Contributed to dynamic MES platforms including track &amp; trace, genealogy, and production data management capabilities across multiple client sites. Developed and optimized SQL databases, queries, stored procedures, and reporting structures for high-volume production data and analytics. Built executive and operational dashboards using Ignition, Python, SQL, and Power BI. Executed migrations from ABB 800xA, RTIP, Wonderware, and FactoryTalk SE to Ignition while preserving functional parity and enabling modernization. Supported 30+ distributed sites using Ignition Edge, including updates, security hardening, backups, system health monitoring, deployments, and commissioning support.
+        </p>
+        <div class="exp-tech">
+          <span class="tag">Ignition Edge</span><span class="tag">Wonderware</span><span class="tag">FactoryTalk</span><span class="tag">ABB 800xA</span><span class="tag">Power BI</span><span class="tag">SQL</span><span class="tag">Track &amp; Trace</span><span class="tag">Dashboards</span>
+        </div>
       </div>
     </div>
   </section>
@@ -1597,11 +1647,7 @@
         </div>
       </div>
     </div>
-
-    <div class="upload-note">
-      // Add your demo GIFs by replacing each showcase media placeholder with an &lt;img src="assets/gifs/your-demo.gif"&gt; tag.
-    </div>
-  </section>
+</section>
 
   <!-- CONTACT -->
   <section id="contact">
