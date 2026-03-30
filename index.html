@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Noah Casey — SCADA / MES Architect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0b0c10;
+      --bg2:       #11131a;
+      --bg3:       #171923;
+      --purple:    #8b5cf6;
+      --purple-lt: #a78bfa;
+      --purple-dk: #5b33b6;
+      --steel:     #2a3140;
+      --grid:      rgba(139, 92, 246, 0.06);
+      --rust:      #c0392b;
+      --text:      #f3f4f6;
+      --muted:     #b7bdc9;
+      --border:    rgba(139, 92, 246, 0.20);
+      --glow:      0 0 28px rgba(139, 92, 246, 0.18);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ── CUSTOM CURSOR ── */
+    .cursor {
+      width: 12px; height: 12px;
+      background: var(--purple-lt);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9999;
+      transition: transform 0.1s ease;
+      mix-blend-mode: screen;
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1px solid var(--purple);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9998;
+      transition: transform 0.15s ease, width 0.2s, height 0.2s, border-color 0.2s;
+    }
+
+    /* ── GRID OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── NOISE TEXTURE ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 200px;
+      pointer-events: none; z-index: 0; opacity: 0.28;
+    }
+
+    section, nav, footer { position: relative; z-index: 1; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 60px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11,12,16,0.88);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 4px;
+      color: var(--purple-lt);
+    }
+    .nav-links { display: flex; gap: 40px; list-style: none; }
+    .nav-links a {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--purple-lt); }
+    .nav-status {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #2ecc71;
+      box-shadow: 0 0 8px #2ecc71;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 140px 60px 80px;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .hero-eyebrow {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 5px;
+      color: var(--purple);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.3s forwards;
+    }
+    .hero-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(80px, 14vw, 200px);
+      line-height: 0.88;
+      letter-spacing: -2px;
+      color: var(--text);
+      opacity: 0;
+      animation: fadeUp 0.9s 0.5s forwards;
+    }
+    .hero-name span {
+      -webkit-text-stroke: 1px var(--purple);
+      color: transparent;
+      display: block;
+    }
+    .hero-role {
+      margin-top: 36px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: var(--muted);
+      max-width: 500px;
+      line-height: 1.8;
+      opacity: 0;
+      animation: fadeUp 0.9s 0.7s forwards;
+    }
+    .hero-cta {
+      margin-top: 56px;
+      display: flex; gap: 20px; flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.9s 0.9s forwards;
+    }
+    .btn-primary {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--purple-lt);
+      padding: 14px 32px;
+      border: none;
+      text-decoration: none;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    }
+    .btn-primary:hover {
+      background: var(--purple);
+      box-shadow: var(--glow);
+      transform: translateY(-2px);
+    }
+    .btn-secondary {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--purple-lt);
+      background: transparent;
+      padding: 14px 32px;
+      border: 1px solid var(--border);
+      text-decoration: none;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    }
+    .btn-secondary:hover {
+      border-color: var(--purple-lt);
+      box-shadow: var(--glow);
+      transform: translateY(-2px);
+    }
+    .hero-deco {
+      position: absolute;
+      right: 8px;
+      bottom: 0;
+      width: min(500px, 45vw);
+      height: 76%;
+      max-height: 580px;
+      opacity: 0;
+      animation: fadeIn 1.2s 1.2s forwards;
+      pointer-events: none;
+      overflow: visible;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+    }
+    .hero-deco svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    /* Steam puff keyframes */
+    @keyframes steam1 {
+      0%   { transform: translateY(0) scaleX(1);   opacity: 0.55; }
+      40%  { opacity: 0.35; }
+      100% { transform: translateY(-180px) scaleX(2.4); opacity: 0; }
+    }
+    @keyframes steam2 {
+      0%   { transform: translateY(0) scaleX(1);   opacity: 0.45; }
+      40%  { opacity: 0.28; }
+      100% { transform: translateY(-160px) scaleX(2.0); opacity: 0; }
+    }
+    @keyframes steam3 {
+      0%   { transform: translateY(0) scaleX(1);   opacity: 0.5; }
+      40%  { opacity: 0.3; }
+      100% { transform: translateY(-200px) scaleX(2.6); opacity: 0; }
+    }
+    @keyframes steam4 {
+      0%   { transform: translateY(0) scaleX(1);   opacity: 0.4; }
+      100% { transform: translateY(-140px) scaleX(1.8); opacity: 0; }
+    }
+    @keyframes pulse-light {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 0.3; }
+    }
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      45% { opacity: 0.7; }
+      50% { opacity: 0.4; }
+      55% { opacity: 0.8; }
+    }
+    .steam-puff {
+      transform-origin: center bottom;
+    }
+    .s1 { animation: steam1 4.2s ease-out infinite; }
+    .s2 { animation: steam2 3.8s ease-out infinite 0.9s; }
+    .s3 { animation: steam3 4.6s ease-out infinite 1.8s; }
+    .s4 { animation: steam4 3.4s ease-out infinite 0.4s; }
+    .s5 { animation: steam1 4.0s ease-out infinite 2.3s; }
+    .s6 { animation: steam2 3.6s ease-out infinite 1.1s; }
+    .warning-blink { animation: pulse-light 1.4s ease-in-out infinite; }
+    .flicker { animation: flicker 6s ease-in-out infinite 2s; }
+    .hero-scroll {
+      position: absolute; bottom: 40px; left: 60px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 12px;
+      opacity: 0;
+      animation: fadeIn 1s 1.5s forwards;
+    }
+    .scroll-line {
+      width: 40px; height: 1px;
+      background: linear-gradient(90deg, var(--purple), transparent);
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ── SECTION SHARED ── */
+    .section-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 5px;
+      color: var(--purple);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 6vw, 90px);
+      line-height: 1;
+      letter-spacing: 1px;
+      color: var(--text);
+      margin-bottom: 60px;
+    }
+    .section-divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, var(--purple), transparent 60%);
+      margin-bottom: 80px;
+    }
+
+    /* ── SKILLS ── */
+    #skills {
+      padding: 120px 60px;
+      background: var(--bg2);
+    }
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 2px;
+    }
+    .skill-card {
+      background: var(--bg3);
+      border: 1px solid var(--steel);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.2s;
+    }
+    .skill-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 0;
+      background: var(--purple-lt);
+      transition: height 0.4s ease;
+    }
+    .skill-card:hover { border-color: var(--purple); transform: translateY(-3px); }
+    .skill-card:hover::before { height: 100%; }
+    .skill-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .skill-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .skill-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.8;
+      font-weight: 400;
+      margin-bottom: 20px;
+    }
+    .skill-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--purple-lt);
+      border: 1px solid var(--purple-dk);
+      padding: 4px 10px;
+      text-transform: uppercase;
+    }
+
+    /* ── EXPERIENCE ── */
+    #experience { padding: 120px 60px; }
+    .exp-timeline { position: relative; padding-left: 40px; }
+    .exp-timeline::before {
+      content: '';
+      position: absolute; left: 0; top: 8px; bottom: 0;
+      width: 1px;
+      background: linear-gradient(180deg, var(--purple), transparent);
+    }
+    .exp-item {
+      position: relative;
+      margin-bottom: 60px;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: opacity 0.6s, transform 0.6s;
+    }
+    .exp-item.visible { opacity: 1; transform: translateX(0); }
+    .exp-dot {
+      position: absolute; left: -44px; top: 8px;
+      width: 10px; height: 10px;
+      border: 2px solid var(--purple);
+      background: var(--bg);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--purple);
+    }
+    .exp-date {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--purple);
+      margin-bottom: 8px;
+    }
+    .exp-company {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+    .exp-role {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .exp-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.9;
+      font-weight: 400;
+      max-width: 600px;
+    }
+    .exp-tech { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+    /* ── PROJECTS ── */
+    #projects {
+      padding: 120px 60px;
+      background: var(--bg2);
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+    .project-card {
+      background: var(--bg3);
+      border: 1px solid var(--steel);
+      display: grid;
+      grid-template-columns: 72px 1fr auto;
+      align-items: start;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, background 0.3s;
+      cursor: default;
+    }
+    .project-card:hover {
+      border-color: var(--purple);
+      background: rgba(23,25,35,0.98);
+    }
+    .project-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--purple-lt), var(--purple-dk));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .project-card:hover::before { opacity: 1; }
+    .project-num-col {
+      padding: 28px 0 28px 28px;
+    }
+    .project-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      color: var(--purple);
+      line-height: 1;
+      opacity: 0.45;
+    }
+    .project-body {
+      padding: 28px 32px;
+      border-left: 1px solid var(--steel);
+      min-width: 0;
+    }
+    .project-context {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--purple-lt);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      opacity: 0.75;
+    }
+    .project-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+    .project-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-bottom: 16px;
+      max-width: 820px;
+      font-weight: 400;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .project-card:hover .project-desc {
+      display: block;
+      overflow: visible;
+    }
+    .project-expand-hint {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--purple-lt);
+      opacity: 0.45;
+      text-transform: uppercase;
+      transition: opacity 0.2s;
+    }
+    .project-card:hover .project-expand-hint { opacity: 0; height: 0; overflow: hidden; }
+    .project-tags-col {
+      padding: 28px 28px 28px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      border-left: 1px solid var(--steel);
+      min-width: 190px;
+    }
+    @media (max-width: 900px) {
+      .project-card { grid-template-columns: 50px 1fr; }
+      .project-tags-col { display: none; }
+      .project-num-col { padding: 20px 0 20px 16px; }
+      .project-body { padding: 20px; }
+    }
+
+    /* ── DEMO SHOWCASE ── */
+    #showcase { padding: 120px 60px; }
+    .showcase-intro {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      margin-bottom: 80px;
+      align-items: center;
+    }
+    .showcase-intro p {
+      font-size: 15px;
+      line-height: 1.9;
+      color: var(--muted);
+    }
+    .showcase-stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+    }
+    .stat-box {
+      background: var(--bg3);
+      border: 1px solid var(--steel);
+      padding: 28px;
+    }
+    .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      color: var(--purple-lt);
+      line-height: 1;
+    }
+    .stat-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+    .showcase-reel {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 2px;
+    }
+    .reel-item {
+      background: var(--bg3);
+      border: 1px solid var(--steel);
+      overflow: hidden;
+      position: relative;
+      transition: border-color 0.3s;
+    }
+    .reel-item:hover { border-color: var(--purple); }
+    .reel-item.featured { grid-row: span 2; }
+    .reel-item img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      min-height: 180px;
+      filter: grayscale(20%);
+      transition: filter 0.4s;
+    }
+    .reel-item:hover img { filter: grayscale(0%); }
+    .reel-placeholder {
+      aspect-ratio: 16/9;
+      min-height: 180px;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 8px;
+    }
+    .reel-placeholder .reel-icon { font-size: 32px; opacity: 0.3; }
+    .reel-label {
+      position: absolute; bottom: 12px; left: 12px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.6);
+      text-transform: uppercase;
+    }
+    .upload-note {
+      margin-top: 20px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--purple);
+      text-align: center;
+      padding: 16px;
+      border: 1px dashed var(--purple-dk);
+    }
+
+    .showcase-demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .showcase-card {
+      background: linear-gradient(180deg, var(--bg3), rgba(23,25,35,0.94));
+      border: 1px solid var(--steel);
+      padding: 26px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.2s;
+    }
+    .showcase-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: linear-gradient(180deg, var(--purple-lt), transparent 80%);
+      opacity: 0.8;
+    }
+    .showcase-card:hover {
+      border-color: var(--purple);
+      transform: translateY(-3px);
+    }
+    .showcase-media {
+      aspect-ratio: 16/9;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--steel);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .showcase-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .showcase-media-label {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.7);
+      text-transform: uppercase;
+    }
+    .showcase-kicker {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--purple-lt);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .showcase-card-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30px;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+    .showcase-card-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.85;
+      margin-bottom: 18px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 60px 60px 40px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 4px;
+      color: var(--purple-lt);
+    }
+    .footer-links { display: flex; gap: 32px; }
+    .footer-links a {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--muted);
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--purple-lt); }
+    .footer-copy {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      opacity: 0.5;
+    }
+
+    /* ── REVEAL ANIMATION ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 16px 24px; }
+      .nav-links { display: none; }
+      #hero, #skills, #certifications, #experience, #projects, #showcase, #contact { padding: 100px 24px 60px; }
+      .hero-kpis { grid-template-columns: 1fr 1fr; }
+      .contact-grid { grid-template-columns: 1fr; }
+      .showcase-intro { grid-template-columns: 1fr; gap: 40px; }
+      .showcase-reel { grid-template-columns: 1fr; }
+      .reel-item.featured { grid-row: span 1; }
+      footer { padding: 40px 24px; flex-direction: column; align-items: flex-start; }
+      .hero-deco { display: none; }
+    }
+
+
+    /* ── HERO KPI STRIP ── */
+    .hero-subline {
+      margin-top: 20px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--purple-lt);
+      text-transform: uppercase;
+      line-height: 1.9;
+      max-width: 900px;
+      opacity: 0;
+      animation: fadeUp 0.9s 0.65s forwards;
+    }
+    .hero-kpis {
+      margin-top: 34px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      gap: 2px;
+      max-width: 980px;
+      opacity: 0;
+      animation: fadeUp 0.9s 0.8s forwards;
+    }
+    .hero-kpi {
+      background: var(--bg3);
+      border: 1px solid var(--steel);
+      padding: 22px 24px;
+    }
+    .hero-kpi-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 54px;
+      line-height: 1;
+      color: var(--purple-lt);
+    }
+    .hero-kpi-label {
+      margin-top: 8px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ── CERTIFICATIONS ── */
+    #certifications {
+      padding: 120px 60px;
+      background: var(--bg2);
+    }
+    .cert-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2px;
+    }
+    .cert-group {
+      background: var(--bg3);
+      border: 1px solid var(--steel);
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .cert-group:hover { border-color: var(--purple); }
+    .cert-group-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--steel);
+      background: rgba(139,92,246,0.04);
+    }
+    .cert-group-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .cert-group-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--purple-lt);
+      text-transform: uppercase;
+    }
+    .cert-group-count {
+      margin-left: auto;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      color: var(--purple);
+      opacity: 0.5;
+      line-height: 1;
+    }
+    .cert-list {
+      display: flex;
+      flex-direction: column;
+    }
+    .cert-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 24px;
+      border-bottom: 1px solid rgba(42,49,64,0.6);
+      transition: background 0.2s;
+    }
+    .cert-item:last-child { border-bottom: none; }
+    .cert-item:hover { background: rgba(139,92,246,0.05); }
+    .cert-item-left { min-width: 0; }
+    .cert-name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.3;
+      margin-bottom: 3px;
+    }
+    .cert-issuer {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+    .cert-badge {
+      flex-shrink: 0;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--purple);
+      box-shadow: 0 0 8px var(--purple);
+      opacity: 0.6;
+    }
+
+    /* ── CONTACT ── */
+    #contact {
+      padding: 120px 60px;
+      background: var(--bg2);
+    }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+    .contact-copy {
+      font-size: 15px;
+      line-height: 1.9;
+      color: var(--muted);
+      max-width: 700px;
+    }
+    .contact-cards {
+      display: grid;
+      gap: 2px;
+    }
+    .contact-card {
+      background: var(--bg3);
+      border: 1px solid var(--steel);
+      padding: 24px 28px;
+    }
+    .contact-card-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 10px;
+    }
+    .contact-card a {
+      color: var(--text);
+      text-decoration: none;
+      word-break: break-word;
+    }
+    .contact-card a:hover { color: var(--purple-lt); }
+
+  </style>
+</head>
+<body>
+
+  <!-- Cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">NOAH.CASEY</div>
+    <ul class="nav-links">
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#certifications">Certifications</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#showcase">Showcase</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-status">
+      <span class="status-dot"></span>
+      AVAILABLE FOR WORK
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-eyebrow">// Portfolio — Senior SCADA / MES Architect</div>
+    <h1 class="hero-name">
+      NOAH<span>CASEY</span>
+    </h1>
+    <div class="hero-subline">IIoT · Enterprise Systems · Industry 4.0 · Ignition Gold Certified SCADA/MES Architect</div>
+    <div class="hero-kpis">
+      <div class="hero-kpi"><div class="hero-kpi-num">7+</div><div class="hero-kpi-label">Years Experience</div></div>
+      <div class="hero-kpi"><div class="hero-kpi-num">10+</div><div class="hero-kpi-label">Industries</div></div>
+      <div class="hero-kpi"><div class="hero-kpi-num">20+</div><div class="hero-kpi-label">Customer Environments</div></div>
+      <div class="hero-kpi"><div class="hero-kpi-num">11</div><div class="hero-kpi-label">Certifications</div></div>
+    </div>
+    <p class="hero-role">
+      Architecting industrial and enterprise software that bridges the plant floor and the boardroom — translating operational complexity into scalable, maintainable platforms that perform under real production conditions.<br/><br/>
+      Specializing in Ignition SCADA/MES, legacy platform modernization, enterprise integrations, and system design across manufacturing, data center, and critical infrastructure environments.
+    </p>
+    <div class="hero-cta">
+      <a href="#showcase" class="btn-primary">View Showcase</a>
+      <a href="#experience" class="btn-secondary">See Experience</a>
+      <a href="#contact" class="btn-secondary">Contact Me</a>
+    </div>
+
+    <div class="hero-deco">
+      <svg viewBox="0 0 520 390" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax meet">
+        <defs>
+          <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1a1c26"/>
+            <stop offset="100%" stop-color="#0d1018"/>
+          </linearGradient>
+          <linearGradient id="beltFrame" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2a2f3f"/>
+            <stop offset="100%" stop-color="#161b26"/>
+          </linearGradient>
+          <linearGradient id="armGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#4a4f63"/>
+            <stop offset="100%" stop-color="#2d3345"/>
+          </linearGradient>
+          <linearGradient id="boxGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#8b5cf6"/>
+            <stop offset="100%" stop-color="#4c1d95"/>
+          </linearGradient>
+          <linearGradient id="boxGrad2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#a78bfa"/>
+            <stop offset="100%" stop-color="#6d28d9"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="shadow">
+            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/>
+          </filter>
+          <pattern id="movingBelt" x="0" y="0" width="34" height="22" patternUnits="userSpaceOnUse">
+            <animate attributeName="x" from="0" to="34" dur="1.2s" repeatCount="indefinite"/>
+            <rect width="34" height="22" fill="#24293a"/>
+            <rect x="0" y="0" width="29" height="22" fill="#30364a"/>
+            <rect x="29" y="0" width="5" height="22" fill="#171c28"/>
+            <rect x="0" y="9" width="34" height="3" fill="#1c2130" opacity="0.65"/>
+          </pattern>
+          <clipPath id="beltClip">
+            <rect x="24" y="233" width="292" height="25" rx="2"/>
+          </clipPath>
+        </defs>
+
+        <!-- floor -->
+        <rect x="0" y="345" width="520" height="45" fill="url(#floorGrad)"/>
+        <line x1="0" y1="345" x2="520" y2="345" stroke="#8b5cf6" stroke-opacity="0.12"/>
+        <line x1="0" y1="362" x2="520" y2="362" stroke="#8b5cf6" stroke-opacity="0.05"/>
+
+        <!-- conveyor -->
+        <rect x="22" y="231" width="296" height="29" rx="4" fill="url(#beltFrame)" stroke="#3a4156" stroke-width="1.5"/>
+        <rect x="24" y="233" width="292" height="25" rx="2" fill="url(#movingBelt)" clip-path="url(#beltClip)"/>
+        <rect x="24" y="233" width="292" height="3" fill="#414a62" opacity="0.45"/>
+        <circle cx="36" cy="246" r="15" fill="#1c2130" stroke="#41475c" stroke-width="2"/>
+        <circle cx="304" cy="246" r="15" fill="#1c2130" stroke="#41475c" stroke-width="2"/>
+        <rect x="60" y="260" width="12" height="85" rx="2" fill="#1a1e2b"/>
+        <rect x="248" y="260" width="12" height="85" rx="2" fill="#1a1e2b"/>
+
+        <!-- boxes on belt -->
+        <g>
+          <animateTransform attributeName="transform" type="translate" from="-60,0" to="238,0" dur="5.2s" repeatCount="indefinite"/>
+          <rect x="62" y="208" width="34" height="25" rx="2" fill="url(#boxGrad)" filter="url(#shadow)"/>
+          <rect x="62" y="208" width="34" height="4" rx="1" fill="#c4b5fd" opacity="0.35"/>
+          <line x1="79" y1="208" x2="79" y2="233" stroke="#c4b5fd" opacity="0.25"/>
+        </g>
+        <g>
+          <animateTransform attributeName="transform" type="translate" from="-60,0" to="238,0" dur="5.2s" begin="1.7s" repeatCount="indefinite"/>
+          <rect x="62" y="210" width="30" height="23" rx="2" fill="url(#boxGrad2)" filter="url(#shadow)"/>
+          <rect x="62" y="210" width="30" height="4" rx="1" fill="#ddd6fe" opacity="0.3"/>
+        </g>
+        <g>
+          <animateTransform attributeName="transform" type="translate" from="-60,0" to="238,0" dur="5.2s" begin="3.3s" repeatCount="indefinite"/>
+          <rect x="62" y="209" width="32" height="24" rx="2" fill="url(#boxGrad)" filter="url(#shadow)"/>
+          <rect x="62" y="209" width="32" height="4" rx="1" fill="#c4b5fd" opacity="0.35"/>
+        </g>
+
+        <!-- packing platform -->
+        <rect x="360" y="246" width="122" height="99" rx="4" fill="#171c28" stroke="#3a4156" stroke-width="1.5"/>
+        <rect x="360" y="246" width="122" height="8" rx="2" fill="#2e3548"/>
+        <rect x="374" y="345" width="12" height="40" fill="#151924"/>
+        <rect x="456" y="345" width="12" height="40" fill="#151924"/>
+
+        <!-- stacked finished boxes -->
+        <rect x="382" y="220" width="30" height="24" rx="2" fill="#5b21b6"/>
+        <rect x="382" y="198" width="30" height="24" rx="2" fill="#6d28d9"/>
+        <rect x="382" y="176" width="30" height="24" rx="2" fill="#7c3aed"/>
+        <text x="397" y="191" font-family="monospace" font-size="9" fill="#10b981" text-anchor="middle">✓</text>
+
+        <!-- monitor -->
+        <rect x="434" y="182" width="50" height="52" rx="3" fill="#0e1118" stroke="#3a4156" stroke-width="1.5"/>
+        <rect x="437" y="185" width="44" height="39" rx="2" fill="#0b0f16"/>
+        <rect x="440" y="191" width="18" height="2" rx="1" fill="#10b981" opacity="0.8"/>
+        <rect x="440" y="197" width="30" height="2" rx="1" fill="#8b5cf6" opacity="0.8"/>
+        <rect x="440" y="203" width="14" height="2" rx="1" fill="#10b981" opacity="0.5"/>
+        <rect x="440" y="209" width="24" height="2" rx="1" fill="#a78bfa" opacity="0.7"/>
+        <rect x="454" y="234" width="8" height="12" fill="#1a1e2b"/>
+
+        <!-- robot base -->
+        <rect x="224" y="308" width="78" height="37" rx="4" fill="#1b2030" stroke="#434a61" stroke-width="1.5"/>
+        <rect x="235" y="284" width="56" height="28" rx="4" fill="#212739" stroke="#4c546d" stroke-width="1.5"/>
+        <circle cx="263" cy="298" r="13" fill="#171c2b" stroke="#5b637d" stroke-width="2"/>
+        <circle cx="253" cy="317" r="3" fill="#8b5cf6" filter="url(#glow)">
+          <animate attributeName="opacity" values="0.9;0.3;0.9" dur="1.6s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="269" cy="317" r="3" fill="#10b981">
+          <animate attributeName="opacity" values="0.8;0.2;0.8" dur="2s" repeatCount="indefinite"/>
+        </circle>
+
+        <!-- robot arm: clearly reaches down to belt -->
+        <g transform="translate(263,298)">
+          <animateTransform attributeName="transform" type="rotate"
+            values="-72,0,0; -72,0,0; -40,0,0; 18,0,0; 36,0,0; 36,0,0; -20,0,0; -72,0,0"
+            keyTimes="0;0.12;0.22;0.48;0.58;0.68;0.82;1"
+            dur="8s" repeatCount="indefinite" additive="sum" calcMode="spline"
+            keySplines="0 0 1 1;0.3 0 0.2 1;0.35 0 0.2 1;0.3 0 0.2 1;0 0 1 1;0.35 0 0.2 1;0.35 0 0.2 1"/>
+
+          <!-- upper arm -->
+          <rect x="-9" y="-8" width="18" height="96" rx="5" fill="url(#armGrad)" stroke="#525a73" stroke-width="1.5"/>
+          <rect x="-4" y="10" width="8" height="2" rx="1" fill="#7983a1" opacity="0.35"/>
+          <rect x="-4" y="20" width="8" height="2" rx="1" fill="#7983a1" opacity="0.35"/>
+
+          <!-- elbow -->
+          <circle cx="0" cy="88" r="11" fill="#1c2233" stroke="#59617b" stroke-width="2"/>
+          <circle cx="0" cy="88" r="5" fill="#111625"/>
+
+          <!-- forearm -->
+          <g transform="translate(0,88)">
+            <animateTransform attributeName="transform" type="rotate"
+              values="18,0,0; 18,0,0; 28,0,0; 74,0,0; 96,0,0; 96,0,0; 45,0,0; 18,0,0"
+              keyTimes="0;0.12;0.22;0.48;0.58;0.68;0.82;1"
+              dur="8s" repeatCount="indefinite" additive="sum" calcMode="spline"
+              keySplines="0 0 1 1;0.3 0 0.2 1;0.35 0 0.2 1;0.3 0 0.2 1;0 0 1 1;0.35 0 0.2 1;0.35 0 0.2 1"/>
+            <rect x="-7" y="-5" width="14" height="78" rx="4" fill="#373f56" stroke="#5a637c" stroke-width="1.5"/>
+            <circle cx="0" cy="73" r="9" fill="#1a2030" stroke="#5a627c" stroke-width="1.5"/>
+
+            <!-- wrist + gripper -->
+            <g transform="translate(0,73)">
+              <animateTransform attributeName="transform" type="rotate"
+                values="-16,0,0; -16,0,0; -10,0,0; 8,0,0; 12,0,0; 12,0,0; -6,0,0; -16,0,0"
+                keyTimes="0;0.12;0.22;0.48;0.58;0.68;0.82;1"
+                dur="8s" repeatCount="indefinite" additive="sum"/>
+              <rect x="-9" y="0" width="18" height="12" rx="2" fill="#283047" stroke="#5b6480" stroke-width="1.2"/>
+
+              <!-- left finger -->
+              <g>
+                <animateTransform attributeName="transform" type="translate"
+                  values="-10,11; -10,11; -5,11; -5,11; -5,11; -10,11; -10,11; -10,11"
+                  keyTimes="0;0.08;0.18;0.56;0.62;0.72;0.84;1"
+                  dur="8s" repeatCount="indefinite"/>
+                <rect x="0" y="0" width="6" height="18" rx="2" fill="#39415a" stroke="#6a7390" stroke-width="1"/>
+              </g>
+
+              <!-- right finger -->
+              <g>
+                <animateTransform attributeName="transform" type="translate"
+                  values="4,11; 4,11; -1,11; -1,11; -1,11; 4,11; 4,11; 4,11"
+                  keyTimes="0;0.08;0.18;0.56;0.62;0.72;0.84;1"
+                  dur="8s" repeatCount="indefinite"/>
+                <rect x="0" y="0" width="6" height="18" rx="2" fill="#39415a" stroke="#6a7390" stroke-width="1"/>
+              </g>
+
+              <!-- picked box held by gripper -->
+              <g opacity="0">
+                <animate attributeName="opacity" values="0;0;1;1;0;0;0;0"
+                  keyTimes="0;0.18;0.22;0.60;0.66;0.7;0.84;1"
+                  dur="8s" repeatCount="indefinite"/>
+                <rect x="-11" y="14" width="22" height="17" rx="2" fill="url(#boxGrad)" filter="url(#shadow)"/>
+                <rect x="-11" y="14" width="22" height="4" rx="1" fill="#c4b5fd" opacity="0.35"/>
+              </g>
+            </g>
+          </g>
+        </g>
+
+        <!-- target pickup highlight on belt -->
+        <ellipse cx="203" cy="233" rx="26" ry="5" fill="#8b5cf6" opacity="0.08">
+          <animate attributeName="opacity" values="0.02;0.12;0.02" dur="8s" repeatCount="indefinite"/>
+        </ellipse>
+
+        <!-- small station label -->
+        <text x="10" y="378" font-family="Share Tech Mono, monospace" font-size="7" fill="#8b5cf6" opacity="0.35" letter-spacing="2">// PICK AND PLACE CELL — ACTIVE</text>
+      </svg>
+    </div>
+
+    <div class="hero-scroll">
+      <div class="scroll-line"></div>
+      SCROLL TO EXPLORE
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="section-label">// 01 — Capabilities</div>
+    <h2 class="section-title">SKILLS &amp;<br/>ARSENAL</h2>
+    <div class="section-divider"></div>
+    <div class="skills-grid">
+      <div class="skill-card reveal">
+        <span class="skill-icon">⚡</span>
+        <div class="skill-name">Software Development</div>
+        <p class="skill-desc">Hands-on development across industrial applications, integrations, frontend experiences, and backend logic used in production manufacturing and enterprise systems.</p>
+        <div class="skill-tags">
+          <span class="tag">Python</span><span class="tag">Jython</span><span class="tag">Java</span><span class="tag">SQL</span><span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">JavaScript</span><span class="tag">REST APIs</span><span class="tag">GitHub</span>
+        </div>
+      </div>
+      <div class="skill-card reveal">
+        <span class="skill-icon">🏭</span>
+        <div class="skill-name">Industrial Platforms</div>
+        <p class="skill-desc">Deep platform experience designing and deploying SCADA, MES, MOM, and HMI solutions across enterprise and multi-site operational environments.</p>
+        <div class="skill-tags">
+          <span class="tag">Ignition</span><span class="tag">Perspective</span><span class="tag">Vision</span><span class="tag">WebDev</span><span class="tag">MQTT</span><span class="tag">Reporting</span><span class="tag">Historian</span><span class="tag">FactoryTalk</span><span class="tag">Wonderware</span><span class="tag">ABB 800xA</span>
+        </div>
+      </div>
+      <div class="skill-card reveal">
+        <span class="skill-icon">🧠</span>
+        <div class="skill-name">Automation &amp; Controls</div>
+        <p class="skill-desc">Industrial architecture knowledge that connects controls, devices, and plant-floor data into structured systems built for reliability and scale.</p>
+        <div class="skill-tags">
+          <span class="tag">OPC UA</span><span class="tag">UNS</span><span class="tag">ISA-95</span><span class="tag">PLC Integration</span><span class="tag">Modbus</span><span class="tag">Tag Architecture</span><span class="tag">Namespace Design</span><span class="tag">Data Abstraction</span>
+        </div>
+      </div>
+      <div class="skill-card reveal">
+        <span class="skill-icon">📈</span>
+        <div class="skill-name">MES / Manufacturing Operations</div>
+        <p class="skill-desc">Built operational applications and workflows that give teams visibility into production, downtime, scheduling, genealogy, and enterprise reporting.</p>
+        <div class="skill-tags">
+          <span class="tag">OEE</span><span class="tag">Downtime</span><span class="tag">Scheduling</span><span class="tag">Work Orders</span><span class="tag">Track &amp; Trace</span><span class="tag">Genealogy</span><span class="tag">Document Mgmt</span><span class="tag">EAM</span>
+        </div>
+      </div>
+      <div class="skill-card reveal">
+        <span class="skill-icon">🔗</span>
+        <div class="skill-name">Data, Integration &amp; Architecture</div>
+        <p class="skill-desc">Architecting secure, scalable system designs that connect SCADA, MES, ERP, CMMS, and enterprise applications through APIs, messaging, and structured data models.</p>
+        <div class="skill-tags">
+          <span class="tag">MSSQL</span><span class="tag">PostgreSQL</span><span class="tag">RESTful APIs</span><span class="tag">MQTT</span><span class="tag">ERP</span><span class="tag">CMMS</span><span class="tag">EAM</span><span class="tag">Data Modeling</span><span class="tag">Performance Tuning</span>
+        </div>
+      </div>
+      <div class="skill-card reveal">
+        <span class="skill-icon">🗄️</span>
+        <div class="skill-name">Database Architecture</div>
+        <p class="skill-desc">Architecting and optimizing SQL environments for operational systems, MES platforms, reporting pipelines, and enterprise integrations.</p>
+        <div class="skill-tags">
+          <span class="tag">MSSQL</span><span class="tag">PostgreSQL</span><span class="tag">MySQL</span><span class="tag">Stored Procedures</span><span class="tag">Tables</span><span class="tag">Views</span><span class="tag">SQL Agent</span><span class="tag">Indexing</span><span class="tag">Cascades</span><span class="tag">Schema Design</span>
+        </div>
+      </div>
+      <div class="skill-card reveal">
+        <span class="skill-icon">🔐</span>
+        <div class="skill-name">Security &amp; Access Control</div>
+        <p class="skill-desc">Designed authentication, authorization, and role-based security models that align users, navigation, and permissions across industrial and enterprise applications.</p>
+        <div class="skill-tags">
+          <span class="tag">RBAC</span><span class="tag">Active Directory</span><span class="tag">Badge Systems</span><span class="tag">Auth Frameworks</span><span class="tag">Secure Navigation</span><span class="tag">App Permissions</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CERTIFICATIONS -->
+  <section id="certifications">
+    <div class="section-label">// 02 — Credentials</div>
+    <h2 class="section-title">CERTIFICATIONS</h2>
+    <div class="section-divider"></div>
+    <div class="cert-groups">
+
+      <div class="cert-group reveal">
+        <div class="cert-group-header">
+          <span class="cert-group-icon">🏭</span>
+          <span class="cert-group-label">Industrial / Platform</span>
+          <span class="cert-group-count">2</span>
+        </div>
+        <div class="cert-list">
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">Ignition Gold 8.1</div>
+              <div class="cert-issuer">Inductive Automation</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">Ignition Core 8.1</div>
+              <div class="cert-issuer">Inductive Automation</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cert-group reveal">
+        <div class="cert-group-header">
+          <span class="cert-group-icon">☁️</span>
+          <span class="cert-group-label">Cloud / Infrastructure</span>
+          <span class="cert-group-count">3</span>
+        </div>
+        <div class="cert-list">
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">AWS Cloud Practitioner</div>
+              <div class="cert-issuer">Amazon</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">LPI Linux Essentials (010-160)</div>
+              <div class="cert-issuer">Linux Professional Institute</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">CompTIA Network+</div>
+              <div class="cert-issuer">CompTIA</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cert-group reveal">
+        <div class="cert-group-header">
+          <span class="cert-group-icon">🔐</span>
+          <span class="cert-group-label">Security / IT Foundations</span>
+          <span class="cert-group-count">3</span>
+        </div>
+        <div class="cert-list">
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">MTA: Security Fundamentals</div>
+              <div class="cert-issuer">Microsoft</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">CompTIA A+</div>
+              <div class="cert-issuer">CompTIA</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">IC3 Digital Literacy</div>
+              <div class="cert-issuer">Certiport</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cert-group reveal">
+        <div class="cert-group-header">
+          <span class="cert-group-icon">📋</span>
+          <span class="cert-group-label">Delivery / Professional</span>
+          <span class="cert-group-count">2</span>
+        </div>
+        <div class="cert-list">
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">ITIL Foundation</div>
+              <div class="cert-issuer">PeopleCert</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">CompTIA Project+</div>
+              <div class="cert-issuer">CompTIA</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cert-group reveal">
+        <div class="cert-group-header">
+          <span class="cert-group-icon">📐</span>
+          <span class="cert-group-label">Design / Engineering</span>
+          <span class="cert-group-count">1</span>
+        </div>
+        <div class="cert-list">
+          <div class="cert-item">
+            <div class="cert-item-left">
+              <div class="cert-name">Autodesk Inventor</div>
+              <div class="cert-issuer">Autodesk</div>
+            </div>
+            <div class="cert-badge"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <div class="section-label">// 03 — Work History</div>
+    <h2 class="section-title">EXPERIENCE</h2>
+    <div class="section-divider"></div>
+    <div class="exp-timeline">
+      <div class="exp-item">
+        <div class="exp-dot"></div>
+        <div class="exp-date">MAY 2024 — PRESENT</div>
+        <div class="exp-company">NEWELL BRANDS</div>
+        <div class="exp-role">// Associate Manager, MES Technical Deployment</div>
+        <p class="exp-desc">Senior SCADA / MES architect and technical lead designing enterprise MES, SCADA, and MOM platforms. Owns system architecture, modernization strategy, security design, integrations, and scalable application frameworks across complex operational environments.</p>
+        <div class="exp-tech"><span class="tag">Ignition</span><span class="tag">MES</span><span class="tag">UNS</span><span class="tag">ISA-95</span><span class="tag">APIs</span><span class="tag">Security</span></div>
+      </div>
+      <div class="exp-item">
+        <div class="exp-dot"></div>
+        <div class="exp-date">DEC 2023 — APR 2024</div>
+        <div class="exp-company">SANDALWOOD ENGINEERING &amp; ERGONOMICS</div>
+        <div class="exp-role">// Systems Integrator (SCADA / MES Architect &amp; Lead Developer)</div>
+        <p class="exp-desc">Architected and delivered SCADA, MES, and HMI solutions using Ignition modules including Perspective, Vision, WebDev, MQTT, and Reporting. Designed APIs, optimized SQL architectures, and modernized legacy manufacturing applications into maintainable Ignition solutions.</p>
+        <div class="exp-tech"><span class="tag">Perspective</span><span class="tag">Vision</span><span class="tag">WebDev</span><span class="tag">MQTT</span><span class="tag">SQL</span><span class="tag">PowerApps</span></div>
+      </div>
+      <div class="exp-item">
+        <div class="exp-dot"></div>
+        <div class="exp-date">FEB 2019 — DEC 2023</div>
+        <div class="exp-company">GLOBAL PROCESS AUTOMATION</div>
+        <div class="exp-role">// MI Solutions Specialist II (SCADA / MES Systems Integrator)</div>
+        <p class="exp-desc">Delivered SCADA, HMI, and MES solutions across 20+ customer environments, including multiple Fortune 500 organizations. Built dashboards, production workflows, data models, migrations from Wonderware / FactoryTalk / ABB 800xA, and ongoing support for distributed Ignition environments.</p>
+        <div class="exp-tech"><span class="tag">Wonderware</span><span class="tag">FactoryTalk</span><span class="tag">ABB 800xA</span><span class="tag">Power BI</span><span class="tag">SQL</span><span class="tag">Ignition Edge</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="section-label">// 04 — Selected Work</div>
+    <h2 class="section-title">PROJECTS</h2>
+    <div class="section-divider"></div>
+    <div class="projects-grid">
+
+      <div class="project-card reveal">
+        <div class="project-num-col"><div class="project-num">01</div></div>
+        <div class="project-body">
+          <div class="project-context">Fortune 100 Company · Enterprise Platform</div>
+          <div class="project-title">Enterprise MES Architecture</div>
+          <p class="project-desc">Led the architecture and delivery of an enterprise MES platform for a Fortune 100 manufacturer, owning the solution from foundational data models through application structure, deployment strategy, and long-term extensibility. The platform unified site-level execution with enterprise visibility, giving leadership and operations teams a shared view of performance across multiple facilities. Core capabilities included OEE, downtime management, scheduling, traceability, genealogy, reporting, and operational workflows. Security, maintainability, and deployment repeatability were built into the architecture from the start.</p>
+          <div class="project-expand-hint">// Hover to expand</div>
+        </div>
+        <div class="project-tags-col">
+          <span class="tag">Ignition</span><span class="tag">MES</span><span class="tag">MOM</span><span class="tag">SQL Server</span><span class="tag">Python/Jython</span><span class="tag">OEE</span><span class="tag">Reporting</span>
+        </div>
+      </div>
+
+      <div class="project-card reveal">
+        <div class="project-num-col"><div class="project-num">02</div></div>
+        <div class="project-body">
+          <div class="project-context">Fortune 100 / 500 Environments · Platform Modernization</div>
+          <div class="project-title">Legacy Platform Migrations</div>
+          <p class="project-desc">Delivered 8+ full legacy platform conversions to Ignition across environments originally built in Wonderware, ABB 800xA, RTIP, and FactoryTalk. Each migration required reverse engineering existing applications, understanding undocumented behaviors, and rebuilding them into cleaner, scalable architectures without losing critical plant functionality. Rather than performing one-for-one copies, I used each migration as an opportunity to modernize the platform structure, reduce technical debt, and standardize naming, security, and maintainability.</p>
+          <div class="project-expand-hint">// Hover to expand</div>
+        </div>
+        <div class="project-tags-col">
+          <span class="tag">Ignition</span><span class="tag">Wonderware</span><span class="tag">ABB 800xA</span><span class="tag">RTIP</span><span class="tag">FactoryTalk</span><span class="tag">UDTs</span>
+        </div>
+      </div>
+
+      <div class="project-card reveal">
+        <div class="project-num-col"><div class="project-num">03</div></div>
+        <div class="project-body">
+          <div class="project-context">Fortune 500 Company · 41 Edge Nodes</div>
+          <div class="project-title">Unified Namespace Architecture</div>
+          <p class="project-desc">Designed and maintained a production Unified Namespace architecture using MQTT to integrate 41 remote Ignition Edge nodes into a cohesive real-time data fabric. I helped define the namespace model, tag hierarchy, and publish patterns aligned to ISA-95 concepts. This enabled enterprise-wide visibility into KPIs, machine states, production data, and site-level performance — supporting downstream analytics, automated reporting, and operational dashboards built on a common data layer.</p>
+          <div class="project-expand-hint">// Hover to expand</div>
+        </div>
+        <div class="project-tags-col">
+          <span class="tag">UNS</span><span class="tag">MQTT</span><span class="tag">Ignition Edge</span><span class="tag">ISA-95</span><span class="tag">Reporting</span><span class="tag">KPIs</span>
+        </div>
+      </div>
+
+      <div class="project-card reveal">
+        <div class="project-num-col"><div class="project-num">04</div></div>
+        <div class="project-body">
+          <div class="project-context">Fortune 100 Company · Enterprise Security</div>
+          <div class="project-title">Security &amp; Access Framework</div>
+          <p class="project-desc">Architected a flexible enterprise security and access framework combining role-based access control, Active Directory integration, badge-based identity inputs, and Ignition-native authentication into a unified permissions model. Rather than treating security as a bolt-on feature, it was embedded into the application foundation and deployment standards — producing a reusable model applicable across enterprise software modules.</p>
+          <div class="project-expand-hint">// Hover to expand</div>
+        </div>
+        <div class="project-tags-col">
+          <span class="tag">RBAC</span><span class="tag">Active Directory</span><span class="tag">Badge Integration</span><span class="tag">Ignition</span><span class="tag">Security Design</span>
+        </div>
+      </div>
+
+      <div class="project-card reveal">
+        <div class="project-num-col"><div class="project-num">05</div></div>
+        <div class="project-body">
+          <div class="project-context">Fortune 100 Company · Supply Chain Compliance</div>
+          <div class="project-title">Supply Chain Traceability</div>
+          <p class="project-desc">Built a supply chain traceability module tracking DDS references, SKU relationships, and EU Deforestation Regulation compliance across production and sourcing workflows. I designed the database model, application logic, and workflow behaviors to support accurate record handling at scale — bridging operational production data with upstream sourcing information to support global manufacturing compliance.</p>
+          <div class="project-expand-hint">// Hover to expand</div>
+        </div>
+        <div class="project-tags-col">
+          <span class="tag">Traceability</span><span class="tag">EUDR</span><span class="tag">SQL Server</span><span class="tag">Python/Jython</span><span class="tag">SKU Management</span>
+        </div>
+      </div>
+
+      <div class="project-card reveal">
+        <div class="project-num-col"><div class="project-num">06</div></div>
+        <div class="project-body">
+          <div class="project-context">Newell Brands · Enterprise Platform Module</div>
+          <div class="project-title">Shift &amp; Crew Management</div>
+          <p class="project-desc">Designed and built a shift configuration and crew management module supporting multi-site scheduling from a centralized interface. A key component was a shift change detection engine that identified production boundaries for accurate OEE calculations during handoffs — eliminating ambiguity around when one crew's production ended and another began, which is critical for trustworthy operational metrics.</p>
+          <div class="project-expand-hint">// Hover to expand</div>
+        </div>
+        <div class="project-tags-col">
+          <span class="tag">SQL Server</span><span class="tag">Python/Jython</span><span class="tag">Perspective</span><span class="tag">Shift Detection</span><span class="tag">OEE</span>
+        </div>
+      </div>
+
+      <div class="project-card reveal">
+        <div class="project-num-col"><div class="project-num">07</div></div>
+        <div class="project-body">
+          <div class="project-context">Fortune 100 Company · Enterprise Asset Management</div>
+          <div class="project-title">Enterprise Asset Management Platform</div>
+          <p class="project-desc">Architected an enterprise asset management platform used by more than 80 facilities to track assets across their lifecycle. The platform supported asset governance, status tracking, operational context, and lifecycle data structures — built to scale across large numbers of facilities without fragmenting into site-specific silos and serving as the central system of record for enterprise operations.</p>
+          <div class="project-expand-hint">// Hover to expand</div>
+        </div>
+        <div class="project-tags-col">
+          <span class="tag">EAM</span><span class="tag">Enterprise Architecture</span><span class="tag">Asset Tracking</span><span class="tag">SQL Server</span><span class="tag">Integration</span>
+        </div>
+      </div>
+
+      <div class="project-card reveal">
+        <div class="project-num-col"><div class="project-num">08</div></div>
+        <div class="project-body">
+          <div class="project-context">Fortune 100 Company · Microsoft Graph API</div>
+          <div class="project-title">SharePoint / Ignition Integration</div>
+          <p class="project-desc">Engineered an automated employee data pipeline using Microsoft Graph API and Azure AD OAuth2 to pull HR-managed Excel data into the enterprise platform. Built a staging-table-based bulk import process handling 24,000+ employee records with validation, reconciliation, and structured error handling — blending enterprise identity, Microsoft cloud integrations, and SQL-based staging into a single reliable workflow.</p>
+          <div class="project-expand-hint">// Hover to expand</div>
+        </div>
+        <div class="project-tags-col">
+          <span class="tag">Microsoft Graph API</span><span class="tag">SharePoint</span><span class="tag">Azure AD OAuth2</span><span class="tag">Python/Jython</span><span class="tag">24K+ Records</span>
+        </div>
+      </div>
+
+      <div class="project-card reveal">
+        <div class="project-num-col"><div class="project-num">09</div></div>
+        <div class="project-body">
+          <div class="project-context">Internal Platform · Workflow Automation</div>
+          <div class="project-title">Internal Help Desk Automation</div>
+          <p class="project-desc">Created an internal help desk platform using Power Apps and SharePoint to manage ticket intake, routing, and resolution tracking across HR, IT, and Finance. Designed automated flows in Power Automate to handle notifications, routing logic, and escalation. Built KPI dashboards providing executives with visibility into ticket health, backlog, and response trends — replacing fragmented manual processes with a centralized, measurable system.</p>
+          <div class="project-expand-hint">// Hover to expand</div>
+        </div>
+        <div class="project-tags-col">
+          <span class="tag">Power Apps</span><span class="tag">SharePoint</span><span class="tag">Power Automate</span><span class="tag">KPI Dashboards</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SHOWCASE -->
+  <section id="showcase">
+    <div class="section-label">// 05 — Featured Demonstrations</div>
+    <h2 class="section-title">SHOWCASE</h2>
+    <div class="section-divider"></div>
+
+    <div class="showcase-intro">
+      <p>
+        I design enterprise-scale industrial software that connects plant-floor systems, site operations, and enterprise visibility into one connected platform. The screens below represent the type of work I build most often: practical operator tools, real-time industrial interfaces, and enterprise applications designed to turn complex operational data into usable workflows.<br/><br/>
+        These demonstrations highlight a mix of SCADA usability, industrial data visibility, and platform-driven application design. Each example is intended to show not only how the interface looks, but how the underlying architecture supports faster navigation, better decision-making, and more scalable operations.
+      </p>
+      <div class="showcase-stat-grid">
+        <div class="stat-box reveal"><div class="stat-num">7+</div><div class="stat-label">Years Experience</div></div>
+        <div class="stat-box reveal"><div class="stat-num">10+</div><div class="stat-label">Industries</div></div>
+        <div class="stat-box reveal"><div class="stat-num">20+</div><div class="stat-label">Customer Environments</div></div>
+        <div class="stat-box reveal"><div class="stat-num">11</div><div class="stat-label">Certifications</div></div>
+      </div>
+    </div>
+
+    <div class="showcase-demo-grid">
+      <div class="showcase-card reveal">
+        <div class="showcase-media">
+          <img src="assets/SCADA.gif" alt="SCADA Dynamic Object Searcher demo" />
+          <div class="showcase-media-label">SCADA Demo</div>
+        </div>
+        <div class="showcase-kicker">Ignition Perspective · Reusable SCADA Utility</div>
+        <div class="showcase-card-title">Dynamic Object Searcher</div>
+        <p class="showcase-card-desc">
+          Developed a reusable SCADA utility for Ignition that dynamically loads and indexes screen objects based on the view path passed into the component. Instead of manually configuring every screen, the tool automatically discovers available objects and presents them in a searchable interface for faster navigation and troubleshooting. Users can quickly locate objects within complex views, then pan and zoom directly to the selected item without hunting through dense layouts by hand. The feature was built to improve usability in large industrial applications where screens contain many nested objects and operators or engineers need faster ways to inspect the interface. Because the component is dynamic, it can be reused across projects with minimal setup while still adapting to the content of each screen. This makes it both a practical workflow tool and a scalable interface enhancement for larger Ignition deployments.
+        </p>
+        <div class="skill-tags">
+          <span class="tag">Ignition Perspective</span><span class="tag">Python/Jython</span><span class="tag">Dynamic UI</span><span class="tag">Search</span><span class="tag">Pan &amp; Zoom</span>
+        </div>
+      </div>
+
+      <div class="showcase-card reveal">
+        <div class="showcase-media">
+          <img src="assets/DCIM.JPG" alt="DCIM screen" />
+          <div class="showcase-media-label">Data Center Demo</div>
+        </div>
+        <div class="showcase-kicker">Enterprise Platform · Data Center Visibility</div>
+        <div class="showcase-card-title">DCIM</div>
+        <p class="showcase-card-desc">
+          This showcase highlights a Data Center Infrastructure Management view designed to provide centralized visibility into data center assets, health, and operational context. The interface is built to help users understand facility conditions, monitor critical infrastructure, and navigate key information quickly through a structured enterprise view. In addition to surfacing the right data, the screen is designed to make that information easier to interpret for operations and technical stakeholders. The goal of the module is to support better awareness across the environment while reducing the time required to move between systems or manually gather status information. It reflects the same platform design principles I use in manufacturing systems: clear hierarchy, actionable visibility, and scalable architecture behind the interface.
+        </p>
+        <div class="skill-tags">
+          <span class="tag">Enterprise UI</span><span class="tag">Operational Visibility</span><span class="tag">Data Center</span><span class="tag">Dashboards</span>
+        </div>
+      </div>
+
+      <div class="showcase-card reveal">
+        <div class="showcase-media">
+          <img src="assets/EPMS.JPG" alt="EPMS screen" />
+          <div class="showcase-media-label">Data Center Demo</div>
+        </div>
+        <div class="showcase-kicker">Enterprise Platform · Performance Monitoring</div>
+        <div class="showcase-card-title">EPMS</div>
+        <p class="showcase-card-desc">
+          EMPS is presented here as a second enterprise-facing data center module focused on performance visibility and operational insight. The screen is intended to show how enterprise applications can consolidate important metrics into a cleaner interface that supports both rapid monitoring and deeper analysis. Rather than functioning as a static dashboard, the module is part of a broader platform approach where multiple systems and data sources feed into a unified view for decision-making. This demonstration is meant to highlight the way I design enterprise software: practical layouts, scalable information architecture, and interfaces that support real users instead of just displaying raw data. It complements the DCIM example by showing how platform modules can be specialized while still fitting within a consistent enterprise design language.
+        </p>
+        <div class="skill-tags">
+          <span class="tag">Enterprise Reporting</span><span class="tag">Performance Monitoring</span><span class="tag">Dashboards</span><span class="tag">Visibility</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="upload-note">
+      // Add your demo GIFs by replacing each showcase media placeholder with an &lt;img src="assets/gifs/your-demo.gif"&gt; tag.
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="section-label">// 06 — Get In Touch</div>
+    <h2 class="section-title">CONTACT</h2>
+    <div class="section-divider"></div>
+    <div class="contact-grid">
+      <div class="contact-copy">
+        I can be contacted through LinkedIn or email. Whether you are looking for SCADA / MES architecture, industrial platform modernization, enterprise integrations, or technical leadership across operational systems, feel free to reach out.
+      </div>
+      <div class="contact-cards">
+        <div class="contact-card reveal">
+          <div class="contact-card-label">LinkedIn</div>
+          <a href="https://www.linkedin.com/in/noahcasey/" target="_blank">linkedin.com/in/noahcasey/</a>
+        </div>
+        <div class="contact-card reveal">
+          <div class="contact-card-label">Email</div>
+          <a href="/cdn-cgi/l/email-protection#6a04050b02090b190f13525e2a0d070b030644090507"><span class="__cf_email__" data-cfemail="2c42434d444f4d5f495514186c4b414d4540024f4341">[email&#160;protected]</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">NOAH.CASEY</div>
+    <div class="footer-links">
+      <a href="https://www.linkedin.com/in/noahcasey/" target="_blank">LinkedIn</a>
+      <a href="/cdn-cgi/l/email-protection#38565759505b594b5d41000c785f55595154165b5755">Email</a>
+      <a href="#experience">Experience</a>
+      <a href="#showcase">Showcase</a>
+    </div>
+    <div class="footer-copy">© 2026 — Built with intent</div>
+  </footer>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    // ── CURSOR
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function animCursor() {
+      rx += (mx - rx) * 0.18;
+      ry += (my - ry) * 0.18;
+      cursor.style.transform = `translate(${mx - 6}px, ${my - 6}px)`;
+      ring.style.transform  = `translate(${rx - 18}px, ${ry - 18}px)`;
+      requestAnimationFrame(animCursor);
+    })();
+    document.querySelectorAll('a, button, .skill-card, .project-card').forEach(el => {
+      el.addEventListener('mouseenter', () => { ring.style.width = '56px'; ring.style.height = '56px'; ring.style.borderColor = 'var(--purple-lt)'; });
+      el.addEventListener('mouseleave', () => { ring.style.width = '36px'; ring.style.height = '36px'; ring.style.borderColor = 'var(--purple)'; });
+    });
+
+    // ── POWER PLANT SCENE — pure CSS/SVG animation, no JS needed
+    // ── SCROLL REVEAL
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal, .exp-item').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
